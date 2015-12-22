@@ -87,7 +87,7 @@ public class HttpServer {
 	}
 
 	/**
-	 * 程序入口
+	 * 主程序入口
 	 * 
 	 * @param args
 	 * @throws Exception

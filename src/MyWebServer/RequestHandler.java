@@ -19,39 +19,48 @@ public class RequestHandler {
 	 * @param get
 	 * @return
 	 */
-	public String requestHandler(String get) {
+	public byte[] requestHandler(String get) {		
 		String path;
 		System.out.println("get:" + get);
 		path = HttpServer.WEB_ROOT + File.separator + get;
 		System.out.println("path:" + path);
-		File file = new File(path);
-		if (!file.exists()) {
-			try {
-				file.createNewFile();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		File file = null;
+
+		file = new File(path);
+		String parentDir = file.getParent();
+		String[] fName = null;
+		StringBuilder result = new StringBuilder();
+		if(file.isDirectory()){
+			fName = file.list();
 		}
 		try {
-			FileOutputStream fos;
-			fos = new FileOutputStream(file);
-			PrintStream sp = new PrintStream(fos);
-			sp.println("<html>");
-			sp.println("<head>");
-			sp.println("<title>简单Web服务器</title>");
-			sp.println("</head>");
-			sp.println("<body>");
-			sp.println("<div align=" + "center" + ">服务器已经成功运行 </div>");
-			sp.println("</body>");
-			sp.println("</html>");
-			sp.close();
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+				result.append("<html>\n");
+				result.append("<head>\n");
+				result.append("<title>简单Web服务器</title>\n");
+				result.append("</head>\n");
+				result.append("<body>\n");
+				result.append("<div align=" + "center" + ">服务器已经成功运行 </div>\n");
+				int i;
+				for(i = 0; i < fName.length; i++){
+					if(parentDir == "D:\\eclipse\\workspace\\WebServer\\webroot"){
+						
+						result.append("<br><a href=\"" +fName[i] + "\">" + fName[i] + "</a>\r");
+					}
+					else{
+						
+						get.replace('/','\\');
+						parentDir = get;
+						result.append("<br><a href=\"" +parentDir + "\\" + fName[i] + "\">" + fName[i] + "</a>\r");
+					}
+					
+					System.out.println(parentDir + "/" + fName[i] + ":" + i);
+				}				
+				result.append("</body>\n");
+				result.append("</html>");
+		} finally{
+			
 		}
-
-		return path;
+		return result.toString().getBytes();
 	}
 
 }

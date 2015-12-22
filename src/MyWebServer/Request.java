@@ -41,7 +41,7 @@ public class Request {
 			index2 = requestString.indexOf(" ", index1 + 1);
 			if(index1 < index2){
 				System.out.println("请求的网页名为：" + requestString.substring(index1 + 2, index2));
-				return requestString.substring(index1 + 1, index2);
+				return requestString.substring(index1 + 2, index2);
 			}
 		}		
 		return null;
