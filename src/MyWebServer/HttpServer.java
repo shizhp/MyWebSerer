@@ -20,37 +20,38 @@ import java.util.Properties;
 public class HttpServer {
 	public static String BASIC_ROOT;/* 默认文件存放路径 */
 	private int iPort;/* 端口号 */
-	public static String WEB_ROOT = System.getProperty("user.dir")
-			+ File.separator + "webroot";/* 动态生成的网页存放的位置 */
+
+	// public static String WEB_ROOT = System.getProperty("user.dir")
+	// + File.separator + "webroot";/* 动态生成的网页存放的位置 */
 
 	/**
 	 * 从配置文件中读取相关配置并启动服务器
 	 * 
 	 * @throws Exception
 	 */
+	@SuppressWarnings("resource")
 	public void startServer() throws Exception {
 		getConfig();
 		System.out.println("默认文件存放路径为：" + BASIC_ROOT);
 		System.out.println("默认端口号为：" + iPort);
 		ServerSocket server;
-		try {
-			server = new ServerSocket(iPort);
-			Socket socket;
+		server = new ServerSocket(iPort);
+		while (true) {
+			Socket socket = new Socket();
 			InputStream in;
 			OutputStream out;
-			while (true) {
-				socket = server.accept();
-				in = socket.getInputStream();
-				out = socket.getOutputStream();
-				Request request = new Request();
-				String get = request.parseRequest(in);
-				RequestHandler handler = new RequestHandler();
-				Response response = new Response(out);
-				response.sendResource(handler.requestHandler(get));
-			}
-//			server.close();
-		} finally {
-//			server.close();
+			socket = server.accept();
+			in = socket.getInputStream();
+			out = socket.getOutputStream();
+			Request request = new Request();
+			request.setInputStream(in);			
+			RequestHandler handler = new RequestHandler();
+			Response response = new Response();
+			response.setOut(out);
+			handler.setRequest(request);			
+			handler.setResponse(response);	
+			handler.requestAnalyse();
+			socket.close();
 		}
 	}
 
@@ -60,7 +61,7 @@ public class HttpServer {
 	 * @throws Exception
 	 */
 	public void getConfig() throws Exception {
-		File iniFile = new File("config.ini");
+		File iniFile = new File(System.getProperty("user.dir"), "config.ini");
 		Properties ppsIni = new Properties();// FileInputStream(iniFile);
 
 		try {
@@ -80,7 +81,28 @@ public class HttpServer {
 			} else {
 				iPort = Integer.parseInt(strValue);
 			}
+		} finally {
 
+		}
+	}
+
+	public static String getBASIC_ROOT() {
+		return BASIC_ROOT;
+	}
+
+	public static void setBASIC_ROOT() throws Exception {
+		File iniFile = new File(System.getProperty("user.dir"), "config.ini");
+		Properties ppsIni = new Properties();
+		try {
+			ppsIni.load(new FileInputStream(iniFile));
+			Enumeration enumer = ppsIni.propertyNames();
+			String strKey = (String) enumer.nextElement();
+			String strValue = ppsIni.getProperty(strKey);
+			if (strValue.equals("") == true) {
+				throw new Exception("配置文件不存在");
+			} else {
+				BASIC_ROOT = strValue;
+			}
 		} finally {
 
 		}

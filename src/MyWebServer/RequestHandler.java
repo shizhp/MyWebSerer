@@ -1,6 +1,7 @@
 package MyWebServer;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -8,59 +9,157 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 
 /**
- * ´¦ÀíÇëÇóÄ£¿é£¬¸ñ¾ÖÇëÇóµÄ²»Í¬µ÷ÓÃ²»Í¬µÄ´¦ÀíÄ£¿é£¬²¢¶¯Ì¬Éú³ÉÏàÓ¦µÄÍøÒ³
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£ï¿½é£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä²ï¿½Í¬ï¿½ï¿½ï¿½Ã²ï¿½Í¬ï¿½Ä´ï¿½ï¿½ï¿½Ä£ï¿½é£¬ï¿½ï¿½ï¿½ï¿½Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½Ò³
  * 
  * @author shizhp
- * @data 2015Äê12ÔÂ21ÈÕ
+ * @data 2015ï¿½ï¿½12ï¿½ï¿½21ï¿½ï¿½
  */
 public class RequestHandler {
-	
-	/**´¦ÀíÇëÇó£¬µ÷ÓÃ²»Í¬µÄ´¦ÀíÄ£¿é£¬·µ»ØÉú³ÉÍøÒ³µÄÂ·¾¶
+	Request request;
+	Response response;
+
+	/**
+	 * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ó£¬µï¿½ï¿½Ã²ï¿½Í¬ï¿½Ä´ï¿½ï¿½ï¿½Ä£ï¿½é£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò³ï¿½ï¿½Â·ï¿½ï¿½
+	 * 
 	 * @param get
 	 * @return
 	 */
-	public byte[] requestHandler(String get) {		
-		String path;
-		System.out.println("get:" + get);
-		path = HttpServer.WEB_ROOT + File.separator + get;
-		System.out.println("path:" + path);
-		File file = null;
+	public void requestAnalyse() throws Exception {
+		request.parseRequest();
+		System.out.println("path" + HttpServer.getBASIC_ROOT() + "/"
+				+ request.getUri());
+		File file;
+		if (request.getUri() == null) {
+			file = new File(HttpServer.getBASIC_ROOT());
+		} else {
+			file = new File(HttpServer.getBASIC_ROOT(), request.getUri());
+		}
 
-		file = new File(path);
-		String parentDir = file.getParent();
-		String[] fName = null;
-		StringBuilder result = new StringBuilder();
-		if(file.isDirectory()){
-			fName = file.list();
+		if (file.isDirectory()) {
+			System.out.println(file.getPath());
+			viewFiles(file);
+		} else if (file.isFile()) {
+			System.out.println("Ô¤ï¿½ï¿½ï¿½Ä¼ï¿½");
+			String fileName = file.getName();
+			int indexOfLastDot = fileName.lastIndexOf(".");
+			String fileType = fileName.substring(indexOfLastDot);
+			System.out.println(fileType);
+			if (fileType.equals(".jpg") || fileType.equals(".txt")) {
+				System.out.println(".txt");
+				viewText(file);
+			}
+			if (fileType.equals(".")) {
+				System.out.println("Ô¤ï¿½ï¿½Í¼Æ¬");
+				viewPicture(file);
+			}
+
 		}
-		try {
-				result.append("<html>\n");
-				result.append("<head>\n");
-				result.append("<title>¼òµ¥Web·þÎñÆ÷</title>\n");
-				result.append("</head>\n");
-				result.append("<body>\n");
-				result.append("<div align=" + "center" + ">·þÎñÆ÷ÒÑ¾­³É¹¦ÔËÐÐ </div>\n");
-				int i;
-				for(i = 0; i < fName.length; i++){
-					if(parentDir == "D:\\eclipse\\workspace\\WebServer\\webroot"){
-						
-						result.append("<br><a href=\"" +fName[i] + "\">" + fName[i] + "</a>\r");
-					}
-					else{
-						
-						get.replace('/','\\');
-						parentDir = get;
-						result.append("<br><a href=\"" +parentDir + "\\" + fName[i] + "\">" + fName[i] + "</a>\r");
-					}
-					
-					System.out.println(parentDir + "/" + fName[i] + ":" + i);
-				}				
-				result.append("</body>\n");
-				result.append("</html>");
-		} finally{
-			
-		}
-		return result.toString().getBytes();
 	}
 
+	/**
+	 * ï¿½ï¿½Ê¾ï¿½Ä¼ï¿½ï¿½ï¿½Ä¿Â¼
+	 * 
+	 * @param file
+	 * @throws Exception
+	 */
+	public void viewFiles(File file) throws Exception {
+		StringBuilder result = new StringBuilder();
+		if (file.isDirectory()) {
+			File[] childFiles = file.listFiles();
+			result.append("<html>");
+			result.append("<head>");
+			result.append("<title>ï¿½ï¿½Webï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</title>");
+			result.append("</head>");
+			result.append("<body>");
+			result.append("<div align=" + "center"
+					+ ">ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¾ï¿½ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ </div>\n");
+			for (File childFile : childFiles) {
+				String childFilePath = request.getUri() + File.separator
+						+ childFile.getName();
+				result.append("<br><a href=\"" + "Http://localhost:8189"
+						+ childFilePath + "\"" + " target=\"view_windows\""
+						+ ">" + childFile.getName() + "</a><br>");
+			}
+			result.append("</body>");
+			result.append("</html>");
+
+		}
+		response.getOut().write(result.toString().getBytes());
+		response.getOut().flush();
+	}
+
+	/**
+	 * ï¿½ï¿½Ê¾ï¿½Ä±ï¿½ï¿½Ä¼ï¿½
+	 * 
+	 * @param file
+	 * @throws Exception
+	 */
+	public void viewText(File file) throws Exception {
+		StringBuilder result = new StringBuilder();
+		StringBuilder result1 = new StringBuilder();
+		// result.append("<html>");
+		// result.append("<head>");
+		// result.append("<title>ï¿½ï¿½Webï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</title>");
+		// result.append("</head>");
+		// result.append("<body>");
+		// result.append("<div align=" + "center" + ">" + request.getUri()
+		// + "</div>");
+		// result.append("<p>");
+		//
+		// result.append("</p>");
+		// result1.append("</body>");
+		// result1.append("</html>");
+
+		response.getOut().write(result.toString().getBytes());
+		int readMark;
+		FileInputStream fis = new FileInputStream(file);
+		byte[] buff = new byte[4096];
+		while ((readMark = fis.read(buff)) != -1) {
+			response.getOut().write(buff);
+		}
+		fis.close();
+		response.getOut().write(result1.toString().getBytes());
+	}
+
+	/**
+	 * Ô¤ï¿½ï¿½Í¼Æ¬
+	 * 
+	 * @param file
+	 * @throws IOException
+	 */
+	private void viewPicture(File file) throws IOException {
+		StringBuilder result = new StringBuilder();
+		result.append("<html>");
+		result.append("<head>");
+		result.append("<title>ï¿½ï¿½Webï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</title>");
+		result.append("</head>");
+		result.append("<body>");
+		result.append("<div align=" + "center" + ">" + request.getUri()
+				+ "</div>");
+		StringBuilder filePath = new StringBuilder();
+		filePath.append(request.getUri());// "Http://localhost:8189" +
+
+		result.append("<img scr=\"" + filePath
+				+ "\" width=\"165\" height=\"60\"" + "alt=\"" + file.getName()
+				+ "\"/>");
+		result.append("</body>");
+		result.append("</html>");
+		response.getOut().write(result.toString().getBytes());
+	}
+
+	public Response getResponse() {
+		return response;
+	}
+
+	public void setResponse(Response response) {
+		this.response = response;
+	}
+
+	public Request getRequest() {
+		return request;
+	}
+
+	public void setRequest(Request request) {
+		this.request = request;
+	}
 }
