@@ -7,22 +7,22 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 
 /**
- * ��������ģ�飬�������Ĳ�ͬ���ò�ͬ�Ĵ���ģ�飬����̬������Ӧ����ҳ
+ * 根据不同的请求内容进行不同的文件处理操作，并调用response类进行输出
  * 
  * @author shizhp
- * @data 2015��12��21��
+ * @data 2015年12月24日
  */
 public class RequestHandler {
 	Request request;
 	Response response;
 
 	/**
-	 * �������󣬵��ò�ͬ�Ĵ���ģ�飬����������ҳ��·��
+	 * 分析请求的内容，判断是否为文件或文件夹，并调用相应模块进行处理
 	 * 
-	 * @param get
-	 * @return
+	 * @throws Exception
 	 */
 	public void requestAnalyse() throws Exception {
 		request.parseRequest();
@@ -39,112 +39,90 @@ public class RequestHandler {
 			System.out.println(file.getPath());
 			viewFiles(file);
 		} else if (file.isFile()) {
-			System.out.println("Ԥ���ļ�");
-			String fileName = file.getName();
-			int indexOfLastDot = fileName.lastIndexOf(".");
-			String fileType = fileName.substring(indexOfLastDot);
-			System.out.println(fileType);
-			if (fileType.equals(".jpg") || fileType.equals(".txt")) {
-				System.out.println(".txt");
-				viewText(file);
-			}
-			if (fileType.equals(".")) {
-				System.out.println("Ԥ��ͼƬ");
-				viewPicture(file);
-			}
-
+			System.out.println("预览文件");
+			viewText(file);
+		} else {
+			fileNotExit();
 		}
 	}
 
 	/**
-	 * ��ʾ�ļ���Ŀ¼
+	 * 先是文件夹子目录
 	 * 
 	 * @param file
 	 * @throws Exception
 	 */
 	public void viewFiles(File file) throws Exception {
 		StringBuilder result = new StringBuilder();
-		if (file.isDirectory()) {
-			File[] childFiles = file.listFiles();
-			result.append("<html>");
-			result.append("<head>");
-			result.append("<title>��Web������</title>");
-			result.append("</head>");
-			result.append("<body>");
-			result.append("<div align=" + "center"
-					+ ">�������Ѿ��ɹ����� </div>\n");
-			for (File childFile : childFiles) {
-				String childFilePath = request.getUri() + File.separator
-						+ childFile.getName();
+		File[] childFiles = file.listFiles();
+		result.append("<html>");
+		result.append("<head>");
+		result.append("<title>简单web服务器</title>");
+		result.append("</head>");
+		result.append("<body>");
+		result.append("<div align=" + "center" + ">服务器已经成功启动 </div>\n");
+		for (File childFile : childFiles) {
+			String childFilePath = request.getUri() + File.separator
+					+ childFile.getName();
+			if (childFile.isDirectory()) {
 				result.append("<br><a href=\"" + "Http://localhost:8189"
 						+ childFilePath + "\"" + " target=\"view_windows\""
-						+ ">" + childFile.getName() + "</a><br>");
+						+ ">" + childFile.getName() + "</a>");
+				result.append("&nbsp&nbsp&nbsp<a href=\""
+						+ "Http://localhost:8189" + childFilePath + "\""
+						+ " download=\"" + childFile.getName()
+						+ ".zip\">download</a><br>");
+			} else {
+				result.append("<br><a href=\"" + "Http://localhost:8189"
+						+ childFilePath + "\"" + " target=\"view_windows\""
+						+ ">" + childFile.getName() + "</a>");
+				result.append("&nbsp&nbsp&nbsp<a href=\""
+						+ "Http://localhost:8189" + childFilePath + "\""
+						+ " download=\"" + childFile.getName()
+						+ "\">download</a><br>");
 			}
-			result.append("</body>");
-			result.append("</html>");
-
 		}
-		response.getOut().write(result.toString().getBytes());
+		result.append("</body>");
+		result.append("</html>");
+		response.getOut().write(result.toString().getBytes("GBK"));
 		response.getOut().flush();
 	}
 
 	/**
-	 * ��ʾ�ı��ļ�
+	 * 浏览文本文件模块
 	 * 
 	 * @param file
 	 * @throws Exception
 	 */
 	public void viewText(File file) throws Exception {
-		StringBuilder result = new StringBuilder();
-		StringBuilder result1 = new StringBuilder();
-		// result.append("<html>");
-		// result.append("<head>");
-		// result.append("<title>��Web������</title>");
-		// result.append("</head>");
-		// result.append("<body>");
-		// result.append("<div align=" + "center" + ">" + request.getUri()
-		// + "</div>");
-		// result.append("<p>");
-		//
-		// result.append("</p>");
-		// result1.append("</body>");
-		// result1.append("</html>");
-
-		response.getOut().write(result.toString().getBytes());
 		int readMark;
 		FileInputStream fis = new FileInputStream(file);
 		byte[] buff = new byte[4096];
 		while ((readMark = fis.read(buff)) != -1) {
 			response.getOut().write(buff);
 		}
+		response.getOut().flush();
 		fis.close();
-		response.getOut().write(result1.toString().getBytes());
 	}
 
 	/**
-	 * Ԥ��ͼƬ
+	 * 输入错误路径处理
 	 * 
-	 * @param file
 	 * @throws IOException
+	 * @throws Exception
 	 */
-	private void viewPicture(File file) throws IOException {
+	private void fileNotExit() throws IOException, Exception {
 		StringBuilder result = new StringBuilder();
 		result.append("<html>");
 		result.append("<head>");
-		result.append("<title>��Web������</title>");
+		result.append("<title>找不到该文件</title>");
 		result.append("</head>");
 		result.append("<body>");
-		result.append("<div align=" + "center" + ">" + request.getUri()
-				+ "</div>");
-		StringBuilder filePath = new StringBuilder();
-		filePath.append(request.getUri());// "Http://localhost:8189" +
-
-		result.append("<img scr=\"" + filePath
-				+ "\" width=\"165\" height=\"60\"" + "alt=\"" + file.getName()
-				+ "\"/>");
+		result.append("<div align=" + "center>" + "404找不到指定文件" + "</div>\n");
 		result.append("</body>");
 		result.append("</html>");
-		response.getOut().write(result.toString().getBytes());
+		response.getOut().write(result.toString().getBytes("GBK"));
+		response.getOut().flush();
 	}
 
 	public Response getResponse() {

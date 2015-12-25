@@ -2,24 +2,15 @@ package MyWebServer;
 
 import java.io.OutputStream;
 
-/**·µ»Ø´¦ÀíÖ®ºóµÄĞÅÏ¢
+/**å°†å¤„ç†åçš„ä¿¡æ¯è¿”å›ç»™æµè§ˆå™¨
  * @author shizhp
- * @data 2015Äê12ÔÂ23ÈÕ
+ * @data 2015å¹´12æœˆ24æ—¥
  */
 public class Response {
-	
 	private OutputStream out;
-
-	/**µ÷ÓÃ¸ÃÊä³öÁ÷
-	 * @return
-	 */
 	public OutputStream getOut() {
 		return out;
 	}
-
-	/**ÉèÖÃÊä³öÁ÷
-	 * @param out
-	 */
 	public void setOut(OutputStream out) {
 		this.out = out;
 	}

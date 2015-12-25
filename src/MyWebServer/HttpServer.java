@@ -12,28 +12,23 @@ import java.util.Enumeration;
 import java.util.Properties;
 
 /**
- * web·şÎñÆ÷Ö÷º¯Êı£¬Ö÷Òª¸ºÔğ·şÎñÆ÷µÄÆô¶¯£¬ÒÔ¼°½ÓÊÜ¿Í»§¶ËÇëÇó£¬µ÷ÓÃ¸÷¸ö¿Í»§¶Ë¶Ô¿Í»§¶ËµÄÇëÇó½øĞĞ´¦Àí¡£
+ * webæœåŠ¡å™¨ï¼Œå®ç°ç”¨æˆ·æŸ¥çœ‹æœåŠ¡å™¨çš„æ–‡ä»¶ï¼Œé¢„è§ˆæ–‡æœ¬æ–‡ä»¶ä»¥åŠå›¾ç‰‡
  * 
  * @author shizhp
- * @data 2015Äê12ÔÂ21ÈÕ
+ * @data 2015å¹´12æœˆ21æ—¥
  */
 public class HttpServer {
-	public static String BASIC_ROOT;/* Ä¬ÈÏÎÄ¼ş´æ·ÅÂ·¾¶ */
-	private int iPort;/* ¶Ë¿ÚºÅ */
-
-	// public static String WEB_ROOT = System.getProperty("user.dir")
-	// + File.separator + "webroot";/* ¶¯Ì¬Éú³ÉµÄÍøÒ³´æ·ÅµÄÎ»ÖÃ */
-
+	public static String BASIC_ROOT;/*æœåŠ¡å™¨æ ¹ç›®å½• */
+	private static int iPort;/*ç«¯å£å·*/
 	/**
-	 * ´ÓÅäÖÃÎÄ¼şÖĞ¶ÁÈ¡Ïà¹ØÅäÖÃ²¢Æô¶¯·şÎñÆ÷
-	 * 
+	 * æœåŠ¡å™¨å¯åŠ¨ç¨‹åºï¼Œè¦æ³¨æ„å…³é—­socketï¼Œä¸ç„¶æµè§ˆå™¨ä¼šä¸€ç›´å¤„äºæ¥æ”¶æ•°æ®çŠ¶æ€
 	 * @throws Exception
 	 */
 	@SuppressWarnings("resource")
 	public void startServer() throws Exception {
 		getConfig();
-		System.out.println("Ä¬ÈÏÎÄ¼ş´æ·ÅÂ·¾¶Îª£º" + BASIC_ROOT);
-		System.out.println("Ä¬ÈÏ¶Ë¿ÚºÅÎª£º" + iPort);
+		System.out.println("æ–‡ä»¶æ ¹ç›®å½•ä¸º" + BASIC_ROOT);
+		System.out.println("ç«¯å£å·ä¸º" + iPort);
 		ServerSocket server;
 		server = new ServerSocket(iPort);
 		while (true) {
@@ -56,8 +51,7 @@ public class HttpServer {
 	}
 
 	/**
-	 * ½âÎöÅäÖÃÎÄ¼ş£¬»ñÈ¡Ä¬ÈÏ¸ùÂ·¾¶£¬»ñÈ¡¶Ë¿Ú
-	 * 
+	 * è·å–æœåŠ¡å™¨æ ¹ç›®å½•ä»¥åŠç«¯å£å·çš„é…ç½®ä¿¡æ¯
 	 * @throws Exception
 	 */
 	public void getConfig() throws Exception {
@@ -66,20 +60,13 @@ public class HttpServer {
 
 		try {
 			ppsIni.load(new FileInputStream(iniFile));
-			Enumeration enumer = ppsIni.propertyNames();
-			String strKey = (String) enumer.nextElement();
-			String strValue = ppsIni.getProperty(strKey);
-			if (strValue.equals("") == true) {
-				throw new Exception("ÅäÖÃÎÄ¼ş²»´æÔÚ");
-			} else {
-				BASIC_ROOT = strValue;
+			BASIC_ROOT = ppsIni.getProperty("BASIC_ROOT");
+			if (BASIC_ROOT.equals("") == true) {
+				throw new Exception("è·¯å¾„æœªè®¾ç½®");
 			}
-			strKey = (String) enumer.nextElement();
-			strValue = ppsIni.getProperty(strKey);
-			if (strValue.equals("") == true) {
-				throw new Exception("¶Ë¿ÚºÅÎ´ÉèÖÃ");
-			} else {
-				iPort = Integer.parseInt(strValue);
+			iPort = Integer.parseInt(ppsIni.getProperty("iPORT"));
+			if (ppsIni.getProperty("iPORT").equals("") == true) {
+				throw new Exception("ç«¯å£å·æœªè®¾ç½®");
 			}
 		} finally {
 
@@ -90,6 +77,9 @@ public class HttpServer {
 		return BASIC_ROOT;
 	}
 
+	/**ä»é…ç½®æ–‡ä»¶ä¸­è·å–æ ¹ç›®å½•
+	 * @throws Exception
+	 */
 	public static void setBASIC_ROOT() throws Exception {
 		File iniFile = new File(System.getProperty("user.dir"), "config.ini");
 		Properties ppsIni = new Properties();
@@ -99,7 +89,7 @@ public class HttpServer {
 			String strKey = (String) enumer.nextElement();
 			String strValue = ppsIni.getProperty(strKey);
 			if (strValue.equals("") == true) {
-				throw new Exception("ÅäÖÃÎÄ¼ş²»´æÔÚ");
+				throw new Exception("é…ç½®æ–‡ä»¶ä¸å­˜åœ¨");
 			} else {
 				BASIC_ROOT = strValue;
 			}
@@ -109,8 +99,7 @@ public class HttpServer {
 	}
 
 	/**
-	 * Ö÷³ÌĞòÈë¿Ú
-	 * 
+	 * ç¨‹åºå…¥å£
 	 * @param args
 	 * @throws Exception
 	 */

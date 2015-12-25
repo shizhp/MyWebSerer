@@ -3,18 +3,12 @@ package MyWebServer;
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- * ½âÎöä¯ÀÀÆ÷ÇëÇóÄÚÈİ
- * 
+
+/**ä»æµè§ˆå™¨çš„è¯·æ±‚è¾“å…¥æµä¸­è·å–è¯·æ±‚å­—ç¬¦ä¸²
  * @author shizhp
- * @data 2015Äê12ÔÂ21ÈÕ
+ * @data 2015å¹´12æœˆ24æ—¥
  */
 public class Request {
-	/**
-	 * ½âÎöÇëÇóÖ÷·½·¨
-	 * @param in
-	 * @return
-	 */
 	private String uri;
 	private InputStream inputStream;
 
@@ -34,6 +28,10 @@ public class Request {
 		this.uri = uri;
 	}
 
+	/**å°†è¯·æ±‚æµè½¬æ¢ä¸ºå­—ç¬¦ä¸²
+	 * @return
+	 * @throws IOException
+	 */
 	public String parseRequest() throws IOException {
 		StringBuilder request = new StringBuilder(4096);
 		byte[] buffer = new byte[4096];
@@ -49,11 +47,8 @@ public class Request {
 
 	}
 
-	/*
-	 * ´ÓÇëÇóÖĞ½âÎö³öUri
-	 * 
-	 * @param RequestString
-	 * 
+	/**å°†è¯·æ±‚å­—ç¬¦ä¸²ä¸­çš„uriè§£æå‡ºæ¥
+	 * @param requestString
 	 * @return
 	 */
 	public String parseUri(String requestString) {
@@ -62,7 +57,7 @@ public class Request {
 		if (index1 != -1) {
 			index2 = requestString.indexOf(" ", index1 + 1);
 			if ((index1 + 1) < index2) {
-				System.out.println("ÇëÇóµÄÍøÒ³ÃûÎª£º" +requestString.substring(index1 + 2, index2));
+				System.out.println("è¯·æ±‚å†…å®¹ä¸º" +requestString.substring(index1 + 2, index2));
 				return requestString.substring(index1 + 1, index2);
 				
 				
