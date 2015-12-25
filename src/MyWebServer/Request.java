@@ -2,6 +2,8 @@ package MyWebServer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 
 
 /**从浏览器的请求输入流中获取请求字符串
@@ -50,17 +52,19 @@ public class Request {
 	/**将请求字符串中的uri解析出来
 	 * @param requestString
 	 * @return
+	 * @throws UnsupportedEncodingException 
 	 */
-	public String parseUri(String requestString) {
+	public String parseUri(String requestString) throws UnsupportedEncodingException {
 		int index1, index2;
 		index1 = requestString.indexOf(" ");
 		if (index1 != -1) {
 			index2 = requestString.indexOf(" ", index1 + 1);
 			if ((index1 + 1) < index2) {
-				System.out.println("请求内容为" +requestString.substring(index1 + 2, index2));
-				return requestString.substring(index1 + 1, index2);
 				
-				
+				String uri = requestString.substring(index1 + 2, index2);
+//				uri = URLDecoder.decode(uri, "utf-8");
+				System.out.println("请求内容为" +uri);
+				return uri;	
 			}
 		}
 		return "/";

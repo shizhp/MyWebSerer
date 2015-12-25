@@ -1,5 +1,7 @@
 package MyWebServer;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -26,7 +28,7 @@ public class RequestHandler {
 	 */
 	public void requestAnalyse() throws Exception {
 		request.parseRequest();
-		System.out.println("path" + HttpServer.getBASIC_ROOT() + "/"
+		System.out.println("path:" + HttpServer.getBASIC_ROOT() + "/"
 				+ request.getUri());
 		File file;
 		if (request.getUri() == null) {
@@ -62,18 +64,22 @@ public class RequestHandler {
 		result.append("<body>");
 		result.append("<div align=" + "center" + ">服务器已经成功启动 </div>\n");
 		for (File childFile : childFiles) {
+			// String childFilePath = request.getUri() + new
+			// String(File.separator.getBytes("utf-8"))
+			// + new
+			// String(childFile.getName().getBytes("utf-8"));//必须都设置为utf-8格式
 			String childFilePath = request.getUri() + File.separator
 					+ childFile.getName();
 			if (childFile.isDirectory()) {
-				result.append("<br><a href=\"" + "Http://localhost:8189"
+				result.append("<br><a href=\"" + "Http://localhost:8189/"
 						+ childFilePath + "\"" + " target=\"view_windows\""
-						+ ">" + childFile.getName() + "</a>");
-				result.append("&nbsp&nbsp&nbsp<a href=\""
-						+ "Http://localhost:8189" + childFilePath + "\""
-						+ " download=\"" + childFile.getName()
-						+ ".zip\">download</a><br>");
+						+ ">" + childFile.getName() + "</a><br>");
+				// result.append("&nbsp&nbsp&nbsp<a href=\""
+				// + "Http://localhost:8189" + childFilePath + "\""
+				// + " download=\"" + childFile.getName()
+				// + ".zip\">download</a><br>");
 			} else {
-				result.append("<br><a href=\"" + "Http://localhost:8189"
+				result.append("<br><a href=\"" + "Http://localhost:8189/"
 						+ childFilePath + "\"" + " target=\"view_windows\""
 						+ ">" + childFile.getName() + "</a>");
 				result.append("&nbsp&nbsp&nbsp<a href=\""
@@ -84,7 +90,7 @@ public class RequestHandler {
 		}
 		result.append("</body>");
 		result.append("</html>");
-		response.getOut().write(result.toString().getBytes("GBK"));
+		response.getOut().write(result.toString().getBytes());
 		response.getOut().flush();
 	}
 
@@ -97,10 +103,12 @@ public class RequestHandler {
 	public void viewText(File file) throws Exception {
 		int readMark;
 		FileInputStream fis = new FileInputStream(file);
-		byte[] buff = new byte[4096];
-		while ((readMark = fis.read(buff)) != -1) {
-			response.getOut().write(buff);
+		ByteArrayOutputStream buff = new ByteArrayOutputStream(4096);
+		byte[] tmpbuff = new byte[4096];
+		while ((readMark = fis.read(tmpbuff)) != -1) {
+			buff.write(tmpbuff, 0, readMark);
 		}
+		response.getOut().write(buff.toByteArray());
 		response.getOut().flush();
 		fis.close();
 	}
@@ -121,7 +129,7 @@ public class RequestHandler {
 		result.append("<div align=" + "center>" + "404找不到指定文件" + "</div>\n");
 		result.append("</body>");
 		result.append("</html>");
-		response.getOut().write(result.toString().getBytes("GBK"));
+		response.getOut().write(result.toString().getBytes());
 		response.getOut().flush();
 	}
 
