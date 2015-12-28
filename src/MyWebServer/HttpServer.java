@@ -2,8 +2,6 @@ package MyWebServer;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
@@ -100,7 +98,7 @@ public class HttpServer {
 		Properties ppsIni = new Properties();
 		try {
 			ppsIni.load(new FileInputStream(iniFile));
-			Enumeration enumer = ppsIni.propertyNames();
+			Enumeration<?> enumer = ppsIni.propertyNames();
 			String strKey = (String) enumer.nextElement();
 			String strValue = ppsIni.getProperty(strKey);
 			if (strValue.equals("") == true) {
