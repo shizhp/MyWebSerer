@@ -42,9 +42,11 @@ public class Request {
 		for (int j = 0; j < i; j++) {
 			request.append((char) buffer[j]);
 		}
-		System.out.println(request.toString());
+//		System.out.println(request.toString());
+		HttpServer.logger.info("REQUEST {}", request.toString());
 		uri = parseUri(request.toString());
-		System.out.println(uri);
+		HttpServer.logger.info("GET {}", uri);
+//		System.out.println(uri);
 		return uri;
 
 	}
@@ -63,7 +65,8 @@ public class Request {
 				
 				String uri = requestString.substring(index1 + 2, index2);
 //				uri = URLDecoder.decode(uri, "utf-8");
-				System.out.println("请求内容为" +uri);
+//				System.out.println("请求内容为" +uri);
+				HttpServer.logger.info("请求内容为 {}", uri);
 				return uri;	
 			}
 		}

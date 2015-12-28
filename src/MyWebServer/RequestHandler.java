@@ -28,7 +28,9 @@ public class RequestHandler {
 	 */
 	public void requestAnalyse() throws Exception {
 		request.parseRequest();
-		System.out.println("path:" + HttpServer.getBASIC_ROOT() + "/"
+//		System.out.println("path:" + HttpServer.getBASIC_ROOT() + "/"
+//				+ request.getUri());
+		HttpServer.logger.info("文件路径为 {}", "path:" + HttpServer.getBASIC_ROOT() + "/"
 				+ request.getUri());
 		File file;
 		if (request.getUri() == null) {
@@ -38,10 +40,12 @@ public class RequestHandler {
 		}
 
 		if (file.isDirectory()) {
-			System.out.println(file.getPath());
+			HttpServer.logger.info("预览文件夹");
+//			System.out.println(file.getPath());
 			viewFiles(file);
 		} else if (file.isFile()) {
-			System.out.println("预览文件");
+//			System.out.println("预览文件");
+			HttpServer.logger.info("预览文件");
 			viewText(file);
 		} else {
 			fileNotExit();
@@ -71,7 +75,7 @@ public class RequestHandler {
 			String childFilePath = request.getUri() + File.separator
 					+ childFile.getName();
 			if (childFile.isDirectory()) {
-				result.append("<br><a href=\"" + "Http://localhost:8189/"
+				result.append("<br><a href=\"" + HttpServer.HOST
 						+ childFilePath + "\"" + " target=\"view_windows\""
 						+ ">" + childFile.getName() + "</a><br>");
 				// result.append("&nbsp&nbsp&nbsp<a href=\""
