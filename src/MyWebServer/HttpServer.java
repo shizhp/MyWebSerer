@@ -1,7 +1,9 @@
 package MyWebServer;
 
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.ServerSocket;
@@ -58,13 +60,56 @@ public class HttpServer {
 		}
 	}
 
+	/* ConnnectionThread类完成与一个Web浏览器的通信 */
+
+	class ConnectionThread extends Thread {
+		public Socket client; // 连接Web浏览器的socket字
+		public int counter; // 计数器
+		public ConnectionThread(Socket cl, int c) {
+			client = cl;
+			counter = c;
+		}
+		@SuppressWarnings("deprecation")
+		public void run() // 线程体
+		{
+			try {
+				String destIP = client.getInetAddress().toString(); // 客户机IP地址
+				int destport = client.getPort(); // 客户机端口号
+				logger.info("Connection " + counter + ":connected to "
+						+ destIP + " on port " + destport + ".");
+				InputStream in;
+				PrintStream out;
+				in = client.getInputStream();
+				out = new PrintStream(client.getOutputStream());
+				Request request = new Request();
+				request.setInputStream(in);
+				RequestHandler handler = new RequestHandler();
+				Response response = new Response();
+				response.setOut(out);
+				handler.setRequest(request);
+				handler.setResponse(response);
+				handler.requestAnalyse();
+				long m1 = 1;
+				while (m1 < 11100000) {
+					m1++;
+				} // 延时
+				client.close();
+			} catch (IOException e) {
+				System.out.println("Exception:" + e);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	/**
 	 * 获取服务器根目录以及端口号的配置信息
 	 * 
 	 * @throws Exception
 	 */
 	public void getConfig() throws Exception {
-		File iniFile = new File(System.getProperty("user.dir") + "\\src\\MyWebServer", "config.ini");
+		File iniFile = new File(System.getProperty("user.dir")
+				+ "\\src\\MyWebServer", "config.ini");
 		Properties ppsIni = new Properties();// FileInputStream(iniFile);
 		ppsIni.load(new FileInputStream(iniFile));
 		BASIC_ROOT = ppsIni.getProperty("BASIC_ROOT");
@@ -89,30 +134,6 @@ public class HttpServer {
 	}
 
 	/**
-	 * 从配置文件中获取根目录
-	 * 
-	 * @throws Exception
-	 */
-	public static void setBASIC_ROOT() throws Exception {
-		File iniFile = new File(System.getProperty("user.dir"), "config.ini");
-		Properties ppsIni = new Properties();
-		try {
-			ppsIni.load(new FileInputStream(iniFile));
-			Enumeration<?> enumer = ppsIni.propertyNames();
-			String strKey = (String) enumer.nextElement();
-			String strValue = ppsIni.getProperty(strKey);
-			if (strValue.equals("") == true) {
-				logger.info("error {}", "配置文件不存在");
-				throw new Exception("配置文件不存在");
-			} else {
-				BASIC_ROOT = strValue;
-			}
-		} finally {
-
-		}
-	}
-
-	/**
 	 * 程序入口
 	 * 
 	 * @param args
@@ -120,7 +141,21 @@ public class HttpServer {
 	 */
 	public static void main(String[] args) throws Exception {
 		HttpServer httpServer = new HttpServer();
-		httpServer.startServer();
+		httpServer.getConfig();
+		logger.info("文件根目录为 {}", BASIC_ROOT);
+		logger.info("端口号为 {}", iPort);
+		logger.info("服务器主机号为 {}", HOST);
+		ServerSocket server;
+		server = new ServerSocket(iPort);
+		Socket client = null;
+		int i = 1;
+		while (true) {
+			client = server.accept();
+			ConnectionThread connectionThread = httpServer.new ConnectionThread(client, i);
+			connectionThread.start();
+			i++;
+		}
+		
 	}
 
 }
