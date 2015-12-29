@@ -10,6 +10,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Enumeration;
 import java.util.Properties;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,20 +66,22 @@ public class HttpServer {
 	/* ConnnectionThread类完成与一个Web浏览器的通信 */
 
 	class ConnectionThread extends Thread {
-		public Socket client; // 连接Web浏览器的socket字
-		public int counter; // 计数器
+		private Socket client; // 连接Web浏览器的socket字
+		private int counter; // 计数器
+
 		public ConnectionThread(Socket cl, int c) {
 			client = cl;
 			counter = c;
 		}
-		@SuppressWarnings("deprecation")
+
+
 		public void run() // 线程体
 		{
 			try {
 				String destIP = client.getInetAddress().toString(); // 客户机IP地址
 				int destport = client.getPort(); // 客户机端口号
-				logger.info("Connection " + counter + ":connected to "
-						+ destIP + " on port " + destport + ".");
+				logger.info("Connection {}:connected to{}  on port {} . ", counter, destIP
+						, destport);
 				InputStream in;
 				PrintStream out;
 				in = client.getInputStream();
@@ -89,10 +94,10 @@ public class HttpServer {
 				handler.setRequest(request);
 				handler.setResponse(response);
 				handler.requestAnalyse();
-				long m1 = 1;
-				while (m1 < 11100000) {
-					m1++;
-				} // 延时
+//				long m1 = 1;
+//				while (m1 < 11100000) {
+//					m1++;
+//				} // 延时
 				client.close();
 			} catch (IOException e) {
 				System.out.println("Exception:" + e);
@@ -149,13 +154,16 @@ public class HttpServer {
 		server = new ServerSocket(iPort);
 		Socket client = null;
 		int i = 1;
+		ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 10,
+				TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(5));
 		while (true) {
 			client = server.accept();
-			ConnectionThread connectionThread = httpServer.new ConnectionThread(client, i);
+			ConnectionThread connectionThread = httpServer.new ConnectionThread(
+					client, i);
+			executor.execute(connectionThread);
 			connectionThread.start();
 			i++;
 		}
-		
-	}
 
+	}
 }
