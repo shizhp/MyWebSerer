@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Properties;
 
 /**
  * 根据不同的请求内容进行不同的文件处理操作，并调用response类进行输出
@@ -22,8 +23,6 @@ public class RequestHandler {
 	 */
 	public void requestAnalyse() throws Exception {
 		request.parseRequest();
-//		System.out.println("path:" + HttpServer.getBASIC_ROOT() + "/"
-//				+ request.getUri());
 		HttpServer.logger.info("文件路径为 {}", "path:" + HttpServer.getBASIC_ROOT() + "/"
 				+ request.getUri());
 		File file;
@@ -32,15 +31,14 @@ public class RequestHandler {
 		} else {
 			file = new File(HttpServer.getBASIC_ROOT(), request.getUri());
 		}
-
-		if (file.isDirectory()) {
-			HttpServer.logger.info("预览文件夹");
-//			System.out.println(file.getPath());
-			viewFiles(file);
-		} else if (file.isFile()) {
-//			System.out.println("预览文件");
-			HttpServer.logger.info("预览文件");
-			viewText(file);
+		if(file.exists()){
+			if (file.isDirectory()) {
+				HttpServer.logger.info("预览文件夹");
+				viewDir(file);
+			} else if (file.isFile()) {
+				HttpServer.logger.info("预览文件");
+				viewFile(file);
+		}		
 		} else {
 			fileNotExit();
 		}
@@ -52,7 +50,7 @@ public class RequestHandler {
 	 * @param file
 	 * @throws Exception
 	 */
-	public void viewFiles(File file) throws Exception {
+	public void viewDir(File file) throws Exception {
 		StringBuilder result = new StringBuilder();
 		File[] childFiles = file.listFiles();
 		result.append("<html>");
@@ -62,20 +60,12 @@ public class RequestHandler {
 		result.append("<body>");
 		result.append("<div align=" + "center" + ">服务器已经成功启动 </div>\n");
 		for (File childFile : childFiles) {
-			// String childFilePath = request.getUri() + new
-			// String(File.separator.getBytes("utf-8"))
-			// + new
-			// String(childFile.getName().getBytes("utf-8"));//必须都设置为utf-8格式
 			String childFilePath = request.getUri() + File.separator
 					+ childFile.getName();
 			if (childFile.isDirectory()) {
 				result.append("<br><a href=\"" + HttpServer.HOST
 						+ childFilePath + "\"" + " target=\"view_windows\""
 						+ ">" + childFile.getName() + "</a><br>");
-				// result.append("&nbsp&nbsp&nbsp<a href=\""
-				// + "Http://localhost:8189" + childFilePath + "\""
-				// + " download=\"" + childFile.getName()
-				// + ".zip\">download</a><br>");
 			} else {
 				result.append("<br><a href=\"" + "Http://localhost:8189/"
 						+ childFilePath + "\"" + " target=\"view_windows\""
@@ -88,6 +78,11 @@ public class RequestHandler {
 		}
 		result.append("</body>");
 		result.append("</html>");
+		response.getOut().println("HTTP/1.1 200 OK");
+		response.getOut().println("MIME_version:1.0");
+		response.getOut().println("Content_Type:text/html");
+		response.getOut().println(("Content_Length:"+result.length()));
+		response.getOut().println("");
 		response.getOut().write(result.toString().getBytes());
 		response.getOut().flush();
 	}
@@ -98,7 +93,21 @@ public class RequestHandler {
 	 * @param file
 	 * @throws Exception
 	 */
-	public void viewText(File file) throws Exception {
+	public void viewFile(File file) throws Exception {
+		String fileType = getFileType(file);
+		File contentTypeIni = new File(System.getProperty("user.dir") + "\\src\\MyWebServer","ContentType.ini");
+		Properties ppsContentType = new Properties();
+		ppsContentType.load(new FileInputStream(contentTypeIni));
+		String contentType = ppsContentType.getProperty(fileType, "application/octet-stream");
+		response.getOut().println("HTTP/1.1 200 OK");
+		response.getOut().println("MIME_version:1.0");
+		
+		
+		response.getOut().println("Content_Type:" + contentType + "charset = UTF-8");
+		
+//		response.getOut().println("Content_Type:text/html");
+		response.getOut().println(("Content_Length:"+file.length()));
+		response.getOut().println("");
 		int readMark;
 		FileInputStream fis = new FileInputStream(file);
 		ByteArrayOutputStream buff = new ByteArrayOutputStream(4096);
@@ -109,6 +118,16 @@ public class RequestHandler {
 		response.getOut().write(buff.toByteArray());
 		response.getOut().flush();
 		fis.close();
+	}
+
+	/**获取请求文件的文件名
+	 * @param file
+	 * @return
+	 */
+	private String getFileType(File file) {
+		String fileName = file.getName();
+		int indexOfDot = fileName.indexOf('.');
+		return fileName.substring(indexOfDot);
 	}
 
 	/**
@@ -127,6 +146,11 @@ public class RequestHandler {
 		result.append("<div align=" + "center>" + "404找不到指定文件" + "</div>\n");
 		result.append("</body>");
 		result.append("</html>");
+		response.getOut().println("HTTP/1.1 404 OK");
+		response.getOut().println("MIME_version:1.0");
+		response.getOut().println("Content_Type:text/html");
+		response.getOut().println(("Content_Length:"+result.length()));
+		response.getOut().println("");
 		response.getOut().write(result.toString().getBytes());
 		response.getOut().flush();
 	}

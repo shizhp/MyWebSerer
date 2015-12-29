@@ -3,6 +3,7 @@ package MyWebServer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 
 
 /**从浏览器的请求输入流中获取请求字符串
@@ -63,7 +64,7 @@ public class Request {
 			if ((index1 + 1) < index2) {
 				
 				String uri = requestString.substring(index1 + 2, index2);
-//				uri = URLDecoder.decode(uri, "utf-8");
+				uri = URLDecoder.decode(uri, "utf-8");
 //				System.out.println("请求内容为" +uri);
 				HttpServer.logger.info("请求内容为 {}", uri);
 				return uri;	

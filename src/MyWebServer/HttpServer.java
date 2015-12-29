@@ -3,7 +3,7 @@ package MyWebServer;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Enumeration;
@@ -42,10 +42,10 @@ public class HttpServer {
 		while (true) {
 			Socket socket = new Socket();
 			InputStream in;
-			OutputStream out;
+			PrintStream out;
 			socket = server.accept();
 			in = socket.getInputStream();
-			out = socket.getOutputStream();
+			out = new PrintStream(socket.getOutputStream());
 			Request request = new Request();
 			request.setInputStream(in);
 			RequestHandler handler = new RequestHandler();
@@ -64,7 +64,7 @@ public class HttpServer {
 	 * @throws Exception
 	 */
 	public void getConfig() throws Exception {
-		File iniFile = new File(System.getProperty("user.dir"), "config.ini");
+		File iniFile = new File(System.getProperty("user.dir") + "\\src\\MyWebServer", "config.ini");
 		Properties ppsIni = new Properties();// FileInputStream(iniFile);
 		ppsIni.load(new FileInputStream(iniFile));
 		BASIC_ROOT = ppsIni.getProperty("BASIC_ROOT");
