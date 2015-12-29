@@ -59,9 +59,21 @@ public class RequestHandler {
 		result.append("</head>");
 		result.append("<body>");
 		result.append("<div align=" + "center" + ">服务器已经成功启动 </div>\n");
+		int indexOfSlash = request.getUri().lastIndexOf('/');
+		if(indexOfSlash > 0){
+			result.append("<br><a href=\"" + HttpServer.HOST
+				+ request.getUri().substring(0, indexOfSlash) + "\"" + " target=\"view_windows\""
+				+ ">" + "返回上层目录" + "</a><br>");
+		}
+		else{
+			result.append("<br><a href=\"" + HttpServer.HOST + "\"" + " target=\"view_windows\""
+					+ ">" + "返回上层目录" + "</a><br>");
+		}
+		
 		for (File childFile : childFiles) {
 			String childFilePath = request.getUri() + File.separator
 					+ childFile.getName();
+			
 			if (childFile.isDirectory()) {
 				result.append("<br><a href=\"" + HttpServer.HOST
 						+ childFilePath + "\"" + " target=\"view_windows\""
@@ -101,11 +113,7 @@ public class RequestHandler {
 		String contentType = ppsContentType.getProperty(fileType, "application/octet-stream");
 		response.getOut().println("HTTP/1.1 200 OK");
 		response.getOut().println("MIME_version:1.0");
-		
-		
 		response.getOut().println("Content_Type:" + contentType + "charset = UTF-8");
-		
-//		response.getOut().println("Content_Type:text/html");
 		response.getOut().println(("Content_Length:"+file.length()));
 		response.getOut().println("");
 		int readMark;
