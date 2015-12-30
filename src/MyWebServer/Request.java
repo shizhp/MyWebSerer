@@ -13,7 +13,8 @@ import java.net.URLDecoder;
 public class Request {
 	private String uri;
 	private InputStream inputStream;
-
+	private StringBuilder requestString = new StringBuilder(4096);
+	
 	public InputStream getInputStream() {
 		return inputStream;
 	}
@@ -30,25 +31,25 @@ public class Request {
 		this.uri = uri;
 	}
 
+	public String getRequestString() {
+		return requestString.toString();
+	}
 	/**将请求流转换为字符串
 	 * @return
 	 * @throws IOException
 	 */
 	public String parseRequest() throws IOException {
-		StringBuilder request = new StringBuilder(4096);
 		byte[] buffer = new byte[4096];
-
 		int i = inputStream.read(buffer);
 		for (int j = 0; j < i; j++) {
-			request.append((char) buffer[j]);
+			requestString.append((char) buffer[j]);
 		}
-//		System.out.println(request.toString());
-		HttpServer.logger.info("REQUEST {}", request.toString());
-		uri = parseUri(request.toString());
+//		System.out.println(requestString.toString());
+		HttpServer.logger.info("REQUEST {}", requestString.toString());
+		uri = parseUri(requestString.toString());
 		HttpServer.logger.info("GET {}", uri);
 //		System.out.println(uri);
 		return uri;
-
 	}
 
 	/**将请求字符串中的uri解析出来
@@ -61,11 +62,9 @@ public class Request {
 		index1 = requestString.indexOf(" ");
 		if (index1 != -1) {
 			index2 = requestString.indexOf(" ", index1 + 1);
-			if ((index1 + 1) < index2) {
-				
+			if ((index1 + 1) < index2) {	
 				String uri = requestString.substring(index1 + 2, index2);
 				uri = URLDecoder.decode(uri, "utf-8");
-//				System.out.println("请求内容为" +uri);
 				HttpServer.logger.info("请求内容为 {}", uri);
 				return uri;	
 			}

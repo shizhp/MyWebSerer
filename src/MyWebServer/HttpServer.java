@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Enumeration;
@@ -65,7 +66,7 @@ public class HttpServer {
 
 	/* ConnnectionThread类完成与一个Web浏览器的通信 */
 
-	class ConnectionThread extends Thread {
+	public class ConnectionThread extends Thread {
 		private Socket client; // 连接Web浏览器的socket字
 		private int counter; // 计数器
 
@@ -73,7 +74,6 @@ public class HttpServer {
 			client = cl;
 			counter = c;
 		}
-
 
 		public void run() // 线程体
 		{
@@ -161,7 +161,7 @@ public class HttpServer {
 			ConnectionThread connectionThread = httpServer.new ConnectionThread(
 					client, i);
 			executor.execute(connectionThread);
-			connectionThread.start();
+//			connectionThread.start();
 			i++;
 		}
 
