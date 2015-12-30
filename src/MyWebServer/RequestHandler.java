@@ -120,10 +120,10 @@ public class RequestHandler {
 				"application/octet-stream");
 		response.getOut().println("HTTP/1.1 200 OK");
 		response.getOut().println("MIME_version:1.0");
-		response.getOut().println(
-				"Content-Range: bytes=" + fileStartRange + '-'
-						+ (indexOfRange == -1 ? file.length() : fileEndRange)
-						+ '/' + file.length());
+//		response.getOut().println(
+//				"Content-Range: bytes=" + fileStartRange + '-'
+//						+ (indexOfRange == -1 ? file.length() : fileEndRange)
+//						+ '/' + file.length());
 		response.getOut()
 				.println(
 						"Content-Length:"
@@ -139,15 +139,15 @@ public class RequestHandler {
 			HttpServer.logger.info("*请求的文件范围为 {} {}", 0, file.length());
 			
 			
-			FileInputStream fis = new FileInputStream(file);
-			ByteArrayOutputStream buff = new ByteArrayOutputStream(4096);
-			byte[] tmpbuff = new byte[4096];
-			while ((readMark = fis.read(tmpbuff)) != -1) {
-				buff.write(tmpbuff, 0, readMark);
-			}
-			response.getOut().write(buff.toByteArray());
-			response.getOut().flush();
-			fis.close();
+//			FileInputStream fis = new FileInputStream(file);//老古董方法
+//			ByteArrayOutputStream buff = new ByteArrayOutputStream(4096);
+//			byte[] tmpbuff = new byte[4096];
+//			while ((readMark = fis.read(tmpbuff)) != -1) {
+//				buff.write(tmpbuff, 0, readMark);
+//			}
+//			response.getOut().write(buff.toByteArray());
+//			response.getOut().flush();
+//			fis.close();
 			
 			
 //			BufferedInputStream bis = new BufferedInputStream(//一次性读取到byte数组中
@@ -161,23 +161,23 @@ public class RequestHandler {
 //							Math.min(4096, intLen - count))) != -1) {
 //				count += n;
 //			}
-//			ByteArrayOutputStream buff = new ByteArrayOutputStream(4096);
-//			buff.write(bytearray, 0, intLen);
-//			response.getOut().write(buff.toByteArray());
-////			response.getOut().write(bytearray);
+////			ByteArrayOutputStream buff = new ByteArrayOutputStream(4096);
+////			buff.write(bytearray, 0, intLen);
+////			response.getOut().write(buff.toByteArray());
+//			response.getOut().write(bytearray);
 //			response.getOut().flush();
 //			bis.close();
 			
 			
-			// {//使用这种下载迅雷会显示任务出错
-			// FileInputStream fis = new FileInputStream(file);
-			// byte[] tmpBuff = new byte[4096];
-			// while ((readMark = fis.read(tmpBuff)) != -1) {
-			// response.getOut().write(tmpBuff);
-			// }
-			// response.getOut().flush();
-			// fis.close();
-			// }
+			 {//使用这种下载迅雷会显示任务出错
+			 FileInputStream fis = new FileInputStream(file);
+			 byte[] tmpBuff = new byte[4096];
+			 while ((readMark = fis.read(tmpBuff)) != -1) {
+			 response.getOut().write(tmpBuff);
+			 }
+			 response.getOut().flush();
+			 fis.close();
+			 }
 		}
 		// } else {
 		// getFileRange();
