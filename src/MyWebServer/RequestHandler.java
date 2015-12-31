@@ -118,105 +118,161 @@ public class RequestHandler {
 		ppsContentType.load(new FileInputStream(contentTypeIni));
 		String contentType = ppsContentType.getProperty(fileType,
 				"application/octet-stream");
-		response.getOut().println("HTTP/1.1 200 OK");
-		response.getOut().println("MIME_version:1.0");
-//		response.getOut().println(
-//				"Content-Range: bytes=" + fileStartRange + '-'
-//						+ (indexOfRange == -1 ? file.length() : fileEndRange)
-//						+ '/' + file.length());
-		response.getOut()
-				.println(
-						"Content-Length:"
-								+ ((indexOfRange == -1 ? file.length()
-										: fileEndRange) - fileStartRange));
-		response.getOut().println("Content-Length:" + file.length());
-		response.getOut().println(
-				"Content_Type:" + contentType + "charset = UTF-8");
-		response.getOut().println("");
-		int readMark;
-		if (indexOfRange >= -1) {// (fileStartRange == 0 && fileEndRange ==
-			// file.length())
+
+		if (indexOfRange == -1) {
+			sendFileResponseHead(file, contentType);
 			HttpServer.logger.info("*请求的文件范围为 {} {}", 0, file.length());
-			
-			
-//			FileInputStream fis = new FileInputStream(file);//老古董方法
-//			ByteArrayOutputStream buff = new ByteArrayOutputStream(4096);
-//			byte[] tmpbuff = new byte[4096];
-//			while ((readMark = fis.read(tmpbuff)) != -1) {
-//				buff.write(tmpbuff, 0, readMark);
-//			}
-//			response.getOut().write(buff.toByteArray());
-//			response.getOut().flush();
-//			fis.close();
-			
-			
-//			BufferedInputStream bis = new BufferedInputStream(//一次性读取到byte数组中
-//					new FileInputStream(file));
-//			int intLen = (int) file.length();
-//			byte[] bytearray = new byte[(int) file.length()];
-//			int count = 0;
-//			int n;
-//			while (count < intLen
-//					&& (n = bis.read(bytearray, count,
-//							Math.min(4096, intLen - count))) != -1) {
-//				count += n;
-//			}
-////			ByteArrayOutputStream buff = new ByteArrayOutputStream(4096);
-////			buff.write(bytearray, 0, intLen);
-////			response.getOut().write(buff.toByteArray());
-//			response.getOut().write(bytearray);
-//			response.getOut().flush();
-//			bis.close();
-			
-			
-			 {//使用这种下载迅雷会显示任务出错
-			 FileInputStream fis = new FileInputStream(file);
-			 byte[] tmpBuff = new byte[4096];
-			 while ((readMark = fis.read(tmpBuff)) != -1) {
-			 response.getOut().write(tmpBuff);
-			 }
-			 response.getOut().flush();
-			 fis.close();
-			 }
-		}
-		// } else {
-		// getFileRange();
-		// HttpServer.logger.info("**请求的文件范围为 {} {}", fileStartRange,
-		// fileEndRange);
-		// RandomAccessFile ras = new RandomAccessFile(file, "r");
-		// ByteArrayOutputStream buff = new ByteArrayOutputStream(4096);
-		// byte[] tmpBuff = new byte[1];
-		// ras.seek(fileStartRange);
-		// while ((readMark = ras.read(tmpBuff)) != -1
-		// && readMark < fileEndRange) {
-		// // buff.write(tmpBuff, (int)fileStartRange, (int)fileEndRange);
-		// response.getOut().write(tmpBuff);
-		// }
-		// // response.getOut().write(buff.toByteArray());
-		// response.getOut().flush();
-		// ras.close();
-		// }
-		else {
-			getFileRange();
+			downLoadFile1(file);// 初始使用方法
+			// downLoadFile2(file);
+			// downLoadFile3(file);
+		} else {
+			sendPartFileResponseHead(file, contentType);
 			HttpServer.logger.info("**请求的文件范围为 {} {}", fileStartRange,
 					fileEndRange);
-			BufferedInputStream bis = new BufferedInputStream(
-					new FileInputStream(file));
-			int intLen = (int) file.length();
-			byte[] bytearray = new byte[(int) file.length()];
-			int count = 0;
-			int n;
-			while (count < intLen
-					&& (n = bis.read(bytearray, count,
-							Math.min(4096, intLen - count))) != -1) {
-				count += n;
-			}
-			ByteArrayOutputStream buff = new ByteArrayOutputStream(4096);
-			buff.write(bytearray, (int)fileStartRange, (int)fileEndRange);
-			response.getOut().write(buff.toByteArray());
-			response.getOut().flush();
-			bis.close();
+			// downLoadPartFile1(file);
+			// downLoadPartFile2(file);
+			downLoadPartFile3(file);
 		}
+	}
+
+	
+
+	private void sendFileResponseHead(File file, String contentType) {
+		response.getOut().println("HTTP/1.1 200 OK");
+		HttpServer.logger.info("Response {}", "HTTP/1.1 200 OK");
+		response.getOut().println("MIME_version:1.0");
+		HttpServer.logger.info("Response {}", "MIME_version:1.0");
+		response.getOut().println("Content-Length:" + file.length());
+		HttpServer.logger
+				.info("Response {}", "Content-Length:" + file.length());
+		response.getOut().println(
+				"Content_Type:" + contentType + "charset = UTF-8");
+		HttpServer.logger.info("Response {}", "Content_Type:" + contentType
+				+ "charset = UTF-8");
+		response.getOut().println("");
+	}
+	
+	private void sendPartFileResponseHead(File file, String contentType) {
+		response.getOut().println("HTTP/1.1 206 OK");
+		HttpServer.logger.info("Response {}", "HTTP/1.1 206 OK");
+		response.getOut().println("MIME_version:1.0");
+		HttpServer.logger.info("Response {}", "MIME_version:1.0");
+		getFileRange();
+		response.getOut().println(
+				"Content-Range: bytes " + fileStartRange + '-'
+						+ fileEndRange + '/' + file.length());
+		HttpServer.logger
+				.info("Response {}",
+						"Content-Range: bytes " + fileStartRange + '-'
+								+ fileEndRange + '/' + file.length());
+		response.getOut().println(
+				"Content-Length: " + (fileEndRange - fileStartRange + 1));
+		HttpServer.logger.info("Response {}", "Content-Length: "
+				+ (fileEndRange - fileStartRange + 1));
+		response.getOut().println(
+				"Content_Type:" + contentType + "charset = UTF-8");
+		HttpServer.logger.info("Response {}", "Content_Type:" + contentType
+				+ "charset = UTF-8");
+		response.getOut().println("");
+	}
+	
+	private void downLoadFile1(File file) throws IOException {
+		int readMark;
+		FileInputStream fis = new FileInputStream(file);// 老古董方法
+		ByteArrayOutputStream buff = new ByteArrayOutputStream(4096);
+		byte[] tmpbuff = new byte[4096];
+		while ((readMark = fis.read(tmpbuff)) != -1) {
+			buff.write(tmpbuff, 0, readMark);
+		}
+		response.getOut().write(buff.toByteArray());
+		response.getOut().flush();
+		fis.close();
+	}
+	
+	private void downLoadFile2(File file) throws IOException {
+		BufferedInputStream bis = new BufferedInputStream(// 一次性读取到byte数组中
+				new FileInputStream(file));
+		int intLen = (int) file.length();
+		byte[] bytearray = new byte[(int) file.length()];
+		int count = 0;
+		int n;
+		while (count < intLen
+				&& (n = bis.read(bytearray, count,
+						Math.min(4096, intLen - count))) != -1) {
+			count += n;
+		}
+		response.getOut().write(bytearray);
+		response.getOut().flush();
+		bis.close();
+	}
+
+	private void downLoadFile3(File file) throws IOException {
+		int readMark;
+		FileInputStream fis = new FileInputStream(file);
+		byte[] tmpBuff = new byte[4096];
+		while ((readMark = fis.read(tmpBuff)) != -1) {
+			response.getOut().write(tmpBuff);
+		}
+		response.getOut().flush();
+		fis.close();
+	}
+
+	/* 更低效率读取法，一个字节一个字节的读取，迅雷下载只有几B/S */
+	private void downLoadPartFile1(File file) throws IOException {
+		int readMark;
+		RandomAccessFile ras = new RandomAccessFile(file, "r");
+		ByteArrayOutputStream buff = new ByteArrayOutputStream(4096);
+		byte tmpBuff;
+		int count = 0;
+		ras.seek(fileStartRange);
+		while ((tmpBuff = ras.readByte()) != -1 && count <= fileEndRange) {
+			// buff.write(tmpBuff, (int)fileStartRange, (int)fileEndRange);
+			response.getOut().write(tmpBuff);
+			count++;
+		}
+		// response.getOut().write(buff.toByteArray());
+		response.getOut().flush();
+		ras.close();
+	}
+
+	private void downLoadPartFile2(File file) throws IOException {
+		/* 较高效读取法，值读取range范围之内的内容 */
+		BufferedInputStream bis = new BufferedInputStream(new FileInputStream(
+				file));
+		int filePartLength = (int) (fileEndRange - fileStartRange + 1);
+		bis.skip(fileStartRange);
+		byte[] buff = new byte[filePartLength];
+		int count = 0;
+		int n;
+		while (count < filePartLength
+				&& (n = bis.read(buff, count,
+						Math.min(4096, filePartLength - count))) != -1) {
+			count += n;
+		}
+		response.getOut().write(buff);
+		bis.close();
+	}
+
+	private void downLoadPartFile3(File file) throws IOException {
+		/* 低效读取法，将文件全部读取到内存中,修改response报头后迅雷支持断点续传 */
+		BufferedInputStream bis = new BufferedInputStream(new FileInputStream(
+				file));
+		int intLen = (int) file.length();
+		byte[] byteArray = new byte[intLen];
+		int count = 0;
+		int n;
+		while (count < intLen
+				&& (n = bis.read(byteArray, count,
+						Math.min(4096, intLen - count))) != -1) {
+			count += n;
+		}
+		// ByteArrayOutputStream buff = new ByteArrayOutputStream(4096);
+		// buff.write(byteArray, (int) fileStartRange, (int) (fileEndRange
+		// - fileStartRange + 1));
+		response.getOut().write(byteArray, (int) fileStartRange,
+				(int) (fileEndRange - fileStartRange + 1));
+		response.getOut().flush();
+		bis.close();
 
 	}
 

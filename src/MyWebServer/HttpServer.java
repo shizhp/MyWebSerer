@@ -9,7 +9,6 @@ import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Enumeration;
 import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -17,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 /**
  * web服务器，实现用户查看服务器的文件，预览文本文件以及图片
@@ -146,6 +146,7 @@ public class HttpServer {
 	 */
 	public static void main(String[] args) throws Exception {
 		HttpServer httpServer = new HttpServer();
+//		httpServer.startServer();
 		httpServer.getConfig();
 		logger.info("文件根目录为 {}", BASIC_ROOT);
 		logger.info("端口号为 {}", iPort);
