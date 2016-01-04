@@ -24,7 +24,9 @@ public class HttpServer {
 	private Logger logger = LoggerFactory.getLogger(HttpServer.class);
 	public static HashMap<String, String> serverConfigMap;
 
-	/**构造函数，初始化服务器配置文件
+	/**
+	 * 构造函数，初始化服务器配置文件
+	 * 
 	 * @throws IOException
 	 * @throws IOException
 	 */
@@ -60,12 +62,13 @@ public class HttpServer {
 	 * @throws Exception
 	 */
 	public void startServer() throws Exception {
-//		getConfig();
+		// getConfig();
 		logger.info("文件根目录BASIC_ROOT： {}", serverConfigMap.get("BASIC_ROOT"));
 		logger.info("端口号iPORT: {}", serverConfigMap.get("iPORT"));
 		logger.info("服务器主机号HOST: {}", serverConfigMap.get("HOST"));
 		ServerSocket server;
-		server = new ServerSocket(Integer.parseInt(serverConfigMap.get("iPORT")));
+		server = new ServerSocket(
+				Integer.parseInt(serverConfigMap.get("iPORT")));
 		Socket client = null;
 		int i = 1;
 		ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 10,
@@ -80,7 +83,6 @@ public class HttpServer {
 	}
 
 	/* ConnnectionThread类完成与一个Web浏览器的通信 */
-
 	public class ConnectionThread extends Thread {
 		private Socket client; // 连接Web浏览器的socket字
 		private int counter; // 计数器
