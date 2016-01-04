@@ -20,7 +20,7 @@ public class Request {
 	static public Logger logger = LoggerFactory.getLogger(Request.class);
 	private String uri;
 	private String range;
-	private InputStream inputStream;
+	private InputStream inputStream = null;
 	private StringBuilder requestString = new StringBuilder(4096);
 	private Socket socket;
 	private HashMap<String, String> requestHeadMap = new HashMap<String, String>();
@@ -38,9 +38,20 @@ public class Request {
 	 */
 	public String parseRequest() throws IOException {
 		byte[] buffer = new byte[4096];
-		int i = inputStream.read(buffer);
-		for (int j = 0; j < i; j++) {
-			requestString.append((char) buffer[j]);
+		try {
+			int i = inputStream.read(buffer);
+			for (int j = 0; j < i; j++) {
+				requestString.append((char) buffer[j]);
+			}
+		} finally {
+			if(inputStream != null){
+				try{
+					inputStream.close();
+				}catch(Exception e){
+					
+				}
+			}
+			
 		}
 		logger.info("REQUEST {}", requestString.toString());
 		getRequestMap(requestString.toString());
@@ -85,7 +96,9 @@ public class Request {
 		}
 	}
 
-	/**获取请求相应字段的值
+	/**
+	 * 获取请求相应字段的值
+	 * 
 	 * @param field
 	 * @return
 	 */

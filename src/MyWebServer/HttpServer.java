@@ -31,7 +31,7 @@ public class HttpServer {
 	 * @throws IOException
 	 */
 	@SuppressWarnings("rawtypes")
-	private HttpServer() throws IOException, IOException {
+	private HttpServer() throws IOException {
 		Properties pps = new Properties();
 		InputStream in = null;
 		serverConfigMap = new HashMap<String, String>();
@@ -48,7 +48,7 @@ public class HttpServer {
 			if (in != null) {
 				try {
 					in.close();
-				} finally {
+				} catch (Exception e) {
 
 				}
 			}
@@ -66,20 +66,32 @@ public class HttpServer {
 		logger.info("文件根目录BASIC_ROOT： {}", serverConfigMap.get("BASIC_ROOT"));
 		logger.info("端口号iPORT: {}", serverConfigMap.get("iPORT"));
 		logger.info("服务器主机号HOST: {}", serverConfigMap.get("HOST"));
-		ServerSocket server;
-		server = new ServerSocket(
-				Integer.parseInt(serverConfigMap.get("iPORT")));
-		Socket client = null;
-		int i = 1;
-		ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 10,
-				TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(5));
-		while (i < 1000) {
-			client = server.accept();
-			ConnectionThread connectionThread = new ConnectionThread(client, i);
-			executor.execute(connectionThread);
-			i++;
+		ServerSocket server = null;
+		try {
+			server = new ServerSocket(Integer.parseInt(serverConfigMap
+					.get("iPORT")));
+			Socket client = null;
+			int i = 1;
+			ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 10,
+					TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(5));
+			while (i < 1000) {
+				client = server.accept();
+				ConnectionThread connectionThread = new ConnectionThread(
+						client, i);
+				executor.execute(connectionThread);
+				i++;
+			}
+		} finally {
+			if(server != null){
+				try{
+					server.close();
+				}catch(Exception e){
+					
+				}
+			}
+			
 		}
-		server.close();
+
 	}
 
 	/* ConnnectionThread类完成与一个Web浏览器的通信 */
@@ -103,11 +115,15 @@ public class HttpServer {
 				Response response = new Response(client);
 				RequestHandler handler = new RequestHandler(request, response);
 				handler.requestAnalyse();
-				client.close();
 			} catch (IOException e) {
 				logger.error("Exception: {}", e);
 			} catch (Exception e) {
 				e.printStackTrace();
+			} finally {
+				try {
+					client.close();
+				} catch (IOException e) {
+				}
 			}
 		}
 	}

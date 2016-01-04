@@ -3,10 +3,9 @@ package MyWebServer;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.Properties;
+import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,9 +18,8 @@ import org.slf4j.LoggerFactory;
 public class RequestHandler {
 	static public Logger logger = LoggerFactory.getLogger(RequestHandler.class);
 	private Request request;
+	@SuppressWarnings("unused")
 	private Response response;
-	long fileStartRange = 0L;
-	long fileEndRange = 0L;
 	private PrintStream out;
 
 	public RequestHandler(Request request, Response response) {
@@ -64,9 +62,10 @@ public class RequestHandler {
 	 * 先是文件夹子目录
 	 * 
 	 * @param file
+	 * @throws IOException
 	 * @throws Exception
 	 */
-	public void viewDir(File file) throws Exception {
+	public void viewDir(File file) throws IOException {
 		StringBuilder result = new StringBuilder();
 		File[] childFiles = file.listFiles();
 		result.append("<html>");
@@ -80,32 +79,28 @@ public class RequestHandler {
 		if (uri != null) {
 			indexOfSlash = uri.lastIndexOf('/');
 		}
-
 		if (uri != null && indexOfSlash > 0) {
 			result.append("<br><a href=\"/"
 					+ request.getHeader("uri").substring(0, indexOfSlash)
 					+ "\"" + " target=\"view_windows\"" + ">" + "返回上层目录"
 					+ "</a><br>");
 		} else {
-			result.append("<br><a href=\"/"
-					+ "\""+ " target=\"view_windows\"" + ">" + "返回上层目录" + "</a><br>");
+			result.append("<br><a href=\"/" + "\"" + " target=\"view_windows\""
+					+ ">" + "返回上层目录" + "</a><br>");
 		}
-
 		for (File childFile : childFiles) {
 			String childFilePath = request.getHeader("uri") + File.separator
 					+ childFile.getName();
-
 			if (childFile.isDirectory()) {
-				result.append("<br><a href=\""
-						+ childFilePath + "\"" + " target=\"view_windows\""
-						+ ">" + childFile.getName() + "</a><br>");
+				result.append("<br><a href=\"" + childFilePath + "\""
+						+ " target=\"view_windows\"" + ">"
+						+ childFile.getName() + "</a><br>");
 			} else {
-				result.append("<br><a href=\"" 
-						+ childFilePath + "\"" + " target=\"view_windows\""
-						+ ">" + childFile.getName() + "</a>");
-				result.append("&nbsp&nbsp&nbsp<a href=\""
-						 + childFilePath + "\""
-						+ " download=\"" + childFile.getName()
+				result.append("<br><a href=\"" + childFilePath + "\""
+						+ " target=\"view_windows\"" + ">"
+						+ childFile.getName() + "</a>");
+				result.append("&nbsp&nbsp&nbsp<a href=\"" + childFilePath
+						+ "\"" + " download=\"" + childFile.getName()
 						+ "\">download</a><br>");
 			}
 		}
@@ -129,31 +124,25 @@ public class RequestHandler {
 	public void viewFile(File file) throws Exception {
 		logger.info("**文件长度为 {}", file.length());
 		String range = request.getHeader("Range");
-
-		String contentType = getContentType(file);
+		String contentType = Util.getContentType(file);
 		if (range.equals("all") == true) {
 			sendFileResponseHead(file, contentType);
 			logger.info("*请求的文件范围为 {} {}", 0, file.length());
 			downLoadFile(file);// 初始使用方法
 		} else {
-			getFileRange();
-			sendPartFileResponseHead(file, contentType);
+			HashMap<String, String> rangeValue = Util.getFileRange(range);
+			long fileStartRange = Long.parseLong(rangeValue.get("startRange"));
+			long fileEndRange;
+			if (rangeValue.get("endrange") == null) {
+				fileEndRange = file.length();
+			} else {
+				fileEndRange = Long.parseLong(rangeValue.get("endRange"));
+			}
+			sendPartFileResponseHead(file, contentType, fileStartRange,
+					fileEndRange);
 			logger.info("**请求的文件范围为 {} {}", fileStartRange, fileEndRange);
-			downLoadPartFile(file);
-
+			downLoadPartFile(file, fileStartRange, fileEndRange);
 		}
-	}
-
-	private String getContentType(File file) throws FileNotFoundException,
-			IOException {
-		String fileType = getFileType(file);
-		File contentTypeIni = new File(System.getProperty("user.dir"),
-				"ContentType.ini");
-		Properties ppsContentType = new Properties();
-		ppsContentType.load(new FileInputStream(contentTypeIni));
-		String contentType = ppsContentType.getProperty(fileType,
-				"application/octet-stream");
-		return contentType;
 	}
 
 	private void sendFileResponseHead(File file, String contentType) {
@@ -162,7 +151,6 @@ public class RequestHandler {
 		out.println("Content-Length:" + file.length());
 		out.println("Content_Type:" + contentType + "charset = UTF-8");
 		out.println("");
-
 		logger.info("Response {}", "HTTP/1.1 200 OK");
 		logger.info("Response {}", "MIME_version:1.0");
 		logger.info("Response {}", "Content-Length:" + file.length());
@@ -170,7 +158,8 @@ public class RequestHandler {
 				+ "charset = UTF-8");
 	}
 
-	private void sendPartFileResponseHead(File file, String contentType) {
+	private void sendPartFileResponseHead(File file, String contentType,
+			long fileStartRange, long fileEndRange) {
 		out.println("HTTP/1.1 206 OK");
 		out.println("MIME_version:1.0");
 		out.println("Content-Range: bytes " + fileStartRange + '-'
@@ -178,7 +167,6 @@ public class RequestHandler {
 		out.println("Content-Length: " + (fileEndRange - fileStartRange + 1));
 		out.println("Content_Type:" + contentType + "charset = UTF-8");
 		out.println("");
-
 		logger.info("Response {}", "HTTP/1.1 206 OK");
 		logger.info("Response {}", "MIME_version:1.0");
 		logger.info("Response {}", "Content-Range: bytes " + fileStartRange
@@ -189,48 +177,46 @@ public class RequestHandler {
 				+ "charset = UTF-8");
 	}
 
+	@SuppressWarnings("unused")
 	private void downLoadFile(File file) throws IOException {
 		int readMark;
-		FileInputStream fis = new FileInputStream(file);
-		byte[] tmpBuff = new byte[4096];
-		while ((readMark = fis.read(tmpBuff)) != -1) {
-			out.write(tmpBuff);
+		FileInputStream fis = null;
+		try {
+			fis = new FileInputStream(file);
+			byte[] tmpBuff = new byte[4096];
+			while ((readMark = fis.read(tmpBuff)) != -1) {
+				out.write(tmpBuff);
+			}
+			out.flush();
+		} finally {
+			if (fis != null) {
+				fis.close();
+			}
 		}
-		out.flush();
-		fis.close();
 	}
 
 	/* 较高效读取法，值读取range范围之内的内容 */
-	private void downLoadPartFile(File file) throws IOException {
-		BufferedInputStream bis = new BufferedInputStream(new FileInputStream(
-				file));
-		int filePartLength = (int) (fileEndRange - fileStartRange + 1);
-		bis.skip(fileStartRange);
-		byte[] buff = new byte[filePartLength];
-		int count = 0;
-		int n;
-		while (count < filePartLength
-				&& (n = bis.read(buff, count,
-						Math.min(4096, filePartLength - count))) != -1) {
-			count += n;
+	private void downLoadPartFile(File file, long fileStartRange,
+			long fileEndRange) throws IOException {
+		BufferedInputStream bis = null;
+		try {
+			bis = new BufferedInputStream(new FileInputStream(file));
+			int filePartLength = (int) (fileEndRange - fileStartRange + 1);
+			bis.skip(fileStartRange);
+			byte[] buff = new byte[filePartLength];
+			int count = 0;
+			int n;
+			while (count < filePartLength
+					&& (n = bis.read(buff, count,
+							Math.min(4096, filePartLength - count))) != -1) {
+				count += n;
+			}
+			out.write(buff);
+		} finally {
+			if(bis != null){
+				bis.close();
+			}
 		}
-		out.write(buff);
-		bis.close();
-	}
-
-	/**
-	 * 获取请求文件的文件名
-	 * 
-	 * @param file
-	 * @return
-	 */
-	private String getFileType(File file) {
-		String fileName = file.getName();
-		int indexOfDot = fileName.indexOf('.');
-		if(indexOfDot != -1){
-			return fileName.substring(indexOfDot);
-		}
-		return ".txt";
 	}
 
 	/**
@@ -256,17 +242,5 @@ public class RequestHandler {
 		out.println("");
 		out.write(result.toString().getBytes());
 		out.flush();
-	}
-
-	private void getFileRange() {
-		String range = request.getHeader("Range");
-		int indexOfSplit;
-		indexOfSplit = range.indexOf('-');
-		String startRange = range.substring(0, indexOfSplit);
-		String endRange = range.substring(indexOfSplit + 1);
-		fileStartRange = Long.parseLong(startRange);
-		fileEndRange = Long.parseLong(endRange);
-		logger.info("文件开始位置{}", fileStartRange);
-		logger.info("文件结束位置{}", fileEndRange);
 	}
 }
