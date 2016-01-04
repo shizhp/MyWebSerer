@@ -1,22 +1,18 @@
 package MyWebServer;
 
-import java.io.DataInputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 /**
  * web服务器，实现用户查看服务器的文件，预览文本文件以及图片
@@ -25,43 +21,62 @@ import org.slf4j.LoggerFactory;
  * @data 2015年12月21日
  */
 public class HttpServer {
-	static public Logger logger = LoggerFactory.getLogger(HttpServer.class);
-	public static String BASIC_ROOT;/* 服务器根目录 */
-	private static int iPort;/* 端口号 */
-	public static String HOST;
+	private Logger logger = LoggerFactory.getLogger(HttpServer.class);
+	public static HashMap<String, String> serverConfigMap;
+
+	/**构造函数，初始化服务器配置文件
+	 * @throws IOException
+	 * @throws IOException
+	 */
+	@SuppressWarnings("rawtypes")
+	private HttpServer() throws IOException, IOException {
+		Properties pps = new Properties();
+		InputStream in = null;
+		serverConfigMap = new HashMap<String, String>();
+		try {
+			in = new FileInputStream("config.ini");
+			pps.load(in);
+			Enumeration en = pps.propertyNames();
+			while (en.hasMoreElements()) {
+				String key = (String) en.nextElement();
+				String Property = pps.getProperty(key);
+				serverConfigMap.put(key, Property);
+			}
+		} finally {
+			if (in != null) {
+				try {
+					in.close();
+				} finally {
+
+				}
+			}
+
+		}
+	}
 
 	/**
 	 * 服务器启动程序，要注意关闭socket，不然浏览器会一直处于接收数据状态
 	 * 
 	 * @throws Exception
 	 */
-	@SuppressWarnings("resource")
 	public void startServer() throws Exception {
-		getConfig();
-		// System.out.println("文件根目录为" + BASIC_ROOT);
-		// System.out.println("端口号为" + iPort);
-		logger.info("文件根目录为 {}", BASIC_ROOT);
-		logger.info("端口号为 {}", iPort);
-		logger.info("服务器主机号为 {}", HOST);
+//		getConfig();
+		logger.info("文件根目录BASIC_ROOT： {}", serverConfigMap.get("BASIC_ROOT"));
+		logger.info("端口号iPORT: {}", serverConfigMap.get("iPORT"));
+		logger.info("服务器主机号HOST: {}", serverConfigMap.get("HOST"));
 		ServerSocket server;
-		server = new ServerSocket(iPort);
-		while (true) {
-			Socket socket = new Socket();
-			InputStream in;
-			PrintStream out;
-			socket = server.accept();
-			in = socket.getInputStream();
-			out = new PrintStream(socket.getOutputStream());
-			Request request = new Request();
-			request.setInputStream(in);
-			RequestHandler handler = new RequestHandler();
-			Response response = new Response();
-			response.setOut(out);
-			handler.setRequest(request);
-			handler.setResponse(response);
-			handler.requestAnalyse();
-			socket.close();
+		server = new ServerSocket(Integer.parseInt(serverConfigMap.get("iPORT")));
+		Socket client = null;
+		int i = 1;
+		ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 10,
+				TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(5));
+		while (i < 1000) {
+			client = server.accept();
+			ConnectionThread connectionThread = new ConnectionThread(client, i);
+			executor.execute(connectionThread);
+			i++;
 		}
+		server.close();
 	}
 
 	/* ConnnectionThread类完成与一个Web浏览器的通信 */
@@ -80,62 +95,19 @@ public class HttpServer {
 			try {
 				String destIP = client.getInetAddress().toString(); // 客户机IP地址
 				int destport = client.getPort(); // 客户机端口号
-				logger.info("Connection {}:connected to{}  on port {} . ", counter, destIP
-						, destport);
-				InputStream in;
-				PrintStream out;
-				in = client.getInputStream();
-				out = new PrintStream(client.getOutputStream());
-				Request request = new Request();
-				request.setInputStream(in);
-				RequestHandler handler = new RequestHandler();
-				Response response = new Response();
-				response.setOut(out);
-				handler.setRequest(request);
-				handler.setResponse(response);
+				logger.info("Connection {}:connected to{}  on port {} . ",
+						counter, destIP, destport);
+				Request request = new Request(client);
+				Response response = new Response(client);
+				RequestHandler handler = new RequestHandler(request, response);
 				handler.requestAnalyse();
-//				long m1 = 1;
-//				while (m1 < 11100000) {
-//					m1++;
-//				} // 延时
 				client.close();
 			} catch (IOException e) {
-				System.out.println("Exception:" + e);
+				logger.error("Exception: {}", e);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
-	}
-
-	/**
-	 * 获取服务器根目录以及端口号的配置信息
-	 * 
-	 * @throws Exception
-	 */
-	public void getConfig() throws Exception {
-		File iniFile = new File(System.getProperty("user.dir")
-				+ "\\src\\MyWebServer", "config.ini");
-		Properties ppsIni = new Properties();// FileInputStream(iniFile);
-		ppsIni.load(new FileInputStream(iniFile));
-		BASIC_ROOT = ppsIni.getProperty("BASIC_ROOT");
-		if (BASIC_ROOT.equals("") == true) {
-			logger.info("error {}", "路径未设置");
-			throw new Exception("路径未设置");
-		}
-		iPort = Integer.parseInt(ppsIni.getProperty("iPORT"));
-		if (ppsIni.getProperty("iPORT").equals("") == true) {
-			logger.info("error {}", "端口号未设置");
-			throw new Exception("端口号未设置");
-		}
-		HOST = ppsIni.getProperty("HOST");
-		if (HOST.equals("") == true) {
-			logger.info("error {}", "服务器地址未设置");
-			throw new Exception("服务器地址未设置");
-		}
-	}
-
-	public static String getBASIC_ROOT() {
-		return BASIC_ROOT;
 	}
 
 	/**
@@ -146,25 +118,6 @@ public class HttpServer {
 	 */
 	public static void main(String[] args) throws Exception {
 		HttpServer httpServer = new HttpServer();
-//		httpServer.startServer();
-		httpServer.getConfig();
-		logger.info("文件根目录为 {}", BASIC_ROOT);
-		logger.info("端口号为 {}", iPort);
-		logger.info("服务器主机号为 {}", HOST);
-		ServerSocket server;
-		server = new ServerSocket(iPort);
-		Socket client = null;
-		int i = 1;
-		ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 10,
-				TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(5));
-		while (true) {
-			client = server.accept();
-			ConnectionThread connectionThread = httpServer.new ConnectionThread(
-					client, i);
-			executor.execute(connectionThread);
-//			connectionThread.start();
-			i++;
-		}
-
+		httpServer.startServer();
 	}
 }

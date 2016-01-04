@@ -3,7 +3,11 @@ package MyWebServer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.Socket;
 import java.net.URLDecoder;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**从浏览器的请求输入流中获取请求字符串
@@ -11,24 +15,19 @@ import java.net.URLDecoder;
  * @data 2015年12月24日
  */
 public class Request {
+	static public Logger logger = LoggerFactory.getLogger(Request.class);
 	private String uri;
 	private InputStream inputStream;
 	private StringBuilder requestString = new StringBuilder(4096);
+	private Socket socket;
 	
-	public InputStream getInputStream() {
-		return inputStream;
-	}
-
-	public void setInputStream(InputStream inputStream) {
-		this.inputStream = inputStream;
+	public Request(Socket client) throws Exception{
+		socket = client;
+		inputStream = socket.getInputStream();
 	}
 
 	public String getUri() {
 		return uri;
-	}
-
-	public void setUri(String uri) {
-		this.uri = uri;
 	}
 
 	public String getRequestString() {
@@ -45,9 +44,9 @@ public class Request {
 			requestString.append((char) buffer[j]);
 		}
 //		System.out.println(requestString.toString());
-		HttpServer.logger.info("REQUEST {}", requestString.toString());
+		logger.info("REQUEST {}", requestString.toString());
 		uri = parseUri(requestString.toString());
-		HttpServer.logger.info("GET {}", uri);
+		logger.info("GET {}", uri);
 //		System.out.println(uri);
 		return uri;
 	}
@@ -65,7 +64,7 @@ public class Request {
 			if ((index1 + 1) < index2) {	
 				String uri = requestString.substring(index1 + 2, index2);
 				uri = URLDecoder.decode(uri, "utf-8");
-				HttpServer.logger.info("请求内容为 {}", uri);
+				logger.info("请求内容为 {}", uri);
 				return uri;	
 			}
 		}
