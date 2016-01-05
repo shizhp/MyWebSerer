@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.HashMap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,25 +38,36 @@ public class RequestHandler {
 		request.parseRequest();
 		logger.info("文件路径为 {}",
 				"path:" + HttpServer.serverConfigMap.get("BASIC_ROOT") + "/"
-						+ request.getHeader("uri"));
+						+ request.getHeader("uri"));//提供get方法
 		File file;
 		if (request.getHeader("uri") == null) {
 			file = new File(HttpServer.serverConfigMap.get("BASIC_ROOT"));
 		} else {
-			file = new File(HttpServer.serverConfigMap.get("BASIC_ROOT"),
+			file = new File(HttpServer.serverConfigMap.get("BASIC_ROOT"),//用了三次 ，临时变量替代
 					request.getHeader("uri"));
 		}
 		if (file.exists()) {
-			if (file.isDirectory()) {
-				logger.info("预览文件夹:{}", file.getName());
-				viewDir(file);
-			} else if (file.isFile()) {
-				logger.info("预览文件:{}", file.getName());
-				viewFile(file);
+				if (file.isDirectory()) {
+					logger.info("预览文件夹:{}", file.getName());
+					viewDir(file);
+				} else if (file.isFile()) {
+					logger.info("预览文件:{}", file.getName());
+					viewFile(file);
+				}
+			} else {
+				fileNotExit();
 			}
-		} else {
-			fileNotExit();
-		}
+//		try {
+//			
+//		} finally {
+//			if(out != null){
+//				try{
+//					out.close();
+//				}catch(Exception e){
+//					
+//				}
+//			}
+//		}
 	}
 
 	/**
@@ -108,11 +120,12 @@ public class RequestHandler {
 		result.append("</html>");
 		out.println("HTTP/1.1 200 OK");
 		out.println("MIME_version:1.0");
-		out.println("Content-Type:text/html");
+		out.println("Content_Type:text/html");
 		out.println(("Content-Length:" + result.length()));
 		out.println("");
 		out.write(result.toString().getBytes());
 		out.flush();
+		System.out.println("asdfg");
 	}
 
 	/**
@@ -127,7 +140,7 @@ public class RequestHandler {
 		String contentType = Util.getContentType(file);
 		if (range.equals("all") == true) {
 			sendFileResponseHead(file, contentType);
-			logger.info("*请求的文件范围为 {} {}", 0, file.length());
+			logger.info("*请求的文件范围为 {} {}", 0, file.length()-1);
 			downLoadFile(file);// 初始使用方法
 		} else {
 			HashMap<String, String> rangeValue = Util.getFileRange(range);
@@ -170,7 +183,7 @@ public class RequestHandler {
 		logger.info("Response {}", "HTTP/1.1 206 OK");
 		logger.info("Response {}", "MIME_version:1.0");
 		logger.info("Response {}", "Content-Range: bytes " + fileStartRange
-				+ '-' + fileEndRange + '/' + file.length());
+				+ '-' + fileEndRange + '/' + file.length());//尽量不用字符串拼接，多问为什么
 		logger.info("Response {}", "Content-Length: "
 				+ (fileEndRange - fileStartRange + 1));
 		logger.info("Response {}", "Content_Type:" + contentType
@@ -190,7 +203,10 @@ public class RequestHandler {
 			out.flush();
 		} finally {
 			if (fis != null) {
-				fis.close();
+				try {
+					fis.close();
+				} catch (Exception e) {
+				}
 			}
 		}
 	}
@@ -213,8 +229,11 @@ public class RequestHandler {
 			}
 			out.write(buff);
 		} finally {
-			if(bis != null){
-				bis.close();
+			if (bis != null) {
+				try {
+					bis.close();
+				} catch (Exception e) {
+				}
 			}
 		}
 	}

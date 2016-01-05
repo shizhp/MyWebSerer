@@ -74,7 +74,7 @@ public class HttpServer {
 			int i = 1;
 			ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 10,
 					TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(5));
-			while (i < 1000) {
+			while (i < 1000) {//浏览器主动关闭
 				client = server.accept();
 				ConnectionThread connectionThread = new ConnectionThread(
 						client, i);
@@ -115,10 +115,9 @@ public class HttpServer {
 				Response response = new Response(client);
 				RequestHandler handler = new RequestHandler(request, response);
 				handler.requestAnalyse();
-			} catch (IOException e) {
-				logger.error("Exception: {}", e);
 			} catch (Exception e) {
 				e.printStackTrace();
+				logger.error("exception{}",e);
 			} finally {
 				try {
 					client.close();

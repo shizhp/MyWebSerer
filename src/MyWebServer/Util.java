@@ -31,7 +31,7 @@ public class Util {
 	 * @param file
 	 * @return
 	 */
-	public static String getFileType(File file) {
+	public static String getFileType(File file) { //默认值，考虑大小写
 		String fileName = file.getName();
 		int indexOfDot = fileName.indexOf('.');
 		if (indexOfDot != -1) {
